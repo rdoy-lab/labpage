@@ -25,22 +25,52 @@ Open http://localhost:3000 and click **Refresh** to discover services.
 
 ## Docker
 
-```dockerfile
-FROM node:20-alpine
-WORKDIR /app
-COPY . .
-RUN npm install
-RUN npm run build
-EXPOSE 3000
-CMD ["npm", "start"]
+### Docker Compose
+
+```yaml
+services:
+  labpage:
+    image: ghcr.io/rdoy-lab/labpage:latest
+    container_name: labpage
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    environment:
+      - LABPAGE_CONFIG=/config/config.yaml
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - ./config.yaml:/config/config.yaml
+      # Uncomment for Kubernetes integration:
+      # - ~/.kube/config:/root/.kube/config:ro
 ```
+
+Place your `config.yaml` next to the `docker-compose.yml`, then start:
+
+```bash
+docker compose up -d
+```
+
+### Docker CLI
+
+```bash
+docker run -d \
+  --name labpage \
+  -p 3000:3000 \
+  -e LABPAGE_CONFIG=/config/config.yaml \
+  -v /var/run/docker.sock:/var/run/docker.sock \
+  -v ./config.yaml:/config/config.yaml \
+  ghcr.io/rdoy-lab/labpage:latest
+```
+
+### Build from source
 
 ```bash
 docker build -t labpage .
 docker run -d \
   -p 3000:3000 \
+  -e LABPAGE_CONFIG=/config/config.yaml \
   -v /var/run/docker.sock:/var/run/docker.sock \
-  -v ~/.config/labpage:/root/.config/labpage \
+  -v ./config.yaml:/config/config.yaml \
   labpage
 ```
 
