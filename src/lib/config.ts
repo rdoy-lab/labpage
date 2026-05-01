@@ -10,6 +10,7 @@ function getArgValue(flag: string): string | undefined {
 }
 
 const CONFIG_PATH = path.resolve(
+  /*turbopackIgnore: true*/
   getArgValue("--config")
   || process.env.LABPAGE_CONFIG
   || path.join(process.env.XDG_CONFIG_HOME || path.join(process.env.HOME || "/root", ".config"), "labpage", "config.yaml")
