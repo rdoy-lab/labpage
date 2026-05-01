@@ -1,0 +1,37 @@
+"use client";
+
+import { useCallback, useEffect, useState } from "react";
+
+export function ThemeProvider({ children }: { children: React.ReactNode }) {
+  const [mounted, setMounted] = useState(false);
+
+  const applyTheme = useCallback((theme: string) => {
+    const root = document.documentElement;
+    root.classList.remove("light", "dark");
+
+    if (theme === "system") {
+      const systemDark = window.matchMedia(
+        "(prefers-color-scheme: dark)"
+      ).matches;
+      root.classList.add(systemDark ? "dark" : "light");
+    } else {
+      root.classList.add(theme);
+    }
+  }, []);
+
+  useEffect(() => {
+    const savedTheme = localStorage.getItem("labpage-theme") || "system";
+    applyTheme(savedTheme);
+
+    // Use requestAnimationFrame to defer setState
+    requestAnimationFrame(() => {
+      setMounted(true);
+    });
+  }, [applyTheme]);
+
+  if (!mounted) {
+    return <>{children}</>;
+  }
+
+  return <>{children}</>;
+}
