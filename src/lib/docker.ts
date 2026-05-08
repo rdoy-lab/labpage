@@ -21,6 +21,17 @@ interface TraefikRouter {
   rule: string;
   service: string;
   status: string;
+  entryPoints: string[];
+}
+
+interface TraefikEntrypoint {
+  name: string;
+  address: string;
+}
+
+interface TraefikInfo {
+  routers: TraefikRouter[];
+  entrypoints: TraefikEntrypoint[];
 }
 
 export function createDockerClient(host: DockerHost): Docker {
@@ -77,15 +88,15 @@ export async function discoverServices(
       const containers = (await docker.listContainers()) as ContainerInfo[];
 
       // Try to get Traefik routers if enabled
-      let traefikRouters: TraefikRouter[] = [];
+      let traefikInfo: TraefikInfo = { routers: [], entrypoints: [] };
       if (config.traefik.enabled) {
-        traefikRouters = await getTraefikRouters(docker, config);
+        traefikInfo = await getTraefikInfo(docker, config);
       }
 
       for (const container of containers) {
         const service = extractService(
           container,
-          traefikRouters,
+          traefikInfo,
           host,
           docker
         );
@@ -103,7 +114,7 @@ export async function discoverServices(
 
 function extractService(
   container: ContainerInfo,
-  traefikRouters: TraefikRouter[],
+  traefikInfo: TraefikInfo,
   host: DockerHost,
   docker: Docker
 ): Service | null {
@@ -125,7 +136,7 @@ function extractService(
   const group = labels["labpage.group"] || inferGroup(labels, container.Image);
 
   // Determine URL with priority system
-  const url = detectUrl(container, traefikRouters, labels, host);
+  const url = detectUrl(container, traefikInfo, labels, host);
 
   // Determine health check path
   const checkPath = labels["labpage.checkPath"] || "/";
@@ -150,7 +161,7 @@ function extractService(
 
 function detectUrl(
   container: ContainerInfo,
-  traefikRouters: TraefikRouter[],
+  traefikInfo: TraefikInfo,
   labels: Record<string, string>,
   host: DockerHost
 ): string | undefined {
@@ -171,12 +182,9 @@ function detectUrl(
   }
 
   // Priority 3: Traefik admin API routers
-  const routerHostname = findRouterForContainer(container, traefikRouters);
-  if (routerHostname) {
-    const url = routerHostname.startsWith("http")
-      ? routerHostname
-      : `https://${routerHostname}`;
-    return replaceLocalhost(url, hostIp);
+  const routerUrl = findRouterForContainer(container, traefikInfo, host);
+  if (routerUrl) {
+    return replaceLocalhost(routerUrl, hostIp);
   }
 
   // Priority 4: Published ports
@@ -238,10 +246,12 @@ function extractPortUrl(
   return undefined;
 }
 
-async function getTraefikRouters(
+async function getTraefikInfo(
   docker: Docker,
   config: DockerConfig
-): Promise<TraefikRouter[]> {
+): Promise<TraefikInfo> {
+  const emptyResult: TraefikInfo = { routers: [], entrypoints: [] };
+
   try {
     // Try to find Traefik container
     const containers = (await docker.listContainers()) as ContainerInfo[];
@@ -251,7 +261,7 @@ async function getTraefikRouters(
         c.Names.some((n) => n.includes("traefik"))
     );
 
-    if (!traefikContainer) return [];
+    if (!traefikContainer) return emptyResult;
 
     // Determine Traefik API URL
     let apiUrl = config.traefik.url;
@@ -266,14 +276,22 @@ async function getTraefikRouters(
       }
     }
 
-    if (!apiUrl) return [];
+    if (!apiUrl) return emptyResult;
 
-    // Fetch routers from Traefik API
-    const response = await fetch(`${apiUrl}/api/http/routers`);
-    if (!response.ok) return [];
+    // Fetch routers and entrypoints in parallel
+    const [routersResponse, entrypointsResponse] = await Promise.all([
+      fetch(`${apiUrl}/api/http/routers`),
+      fetch(`${apiUrl}/api/entrypoints`),
+    ]);
 
-    const routers = await response.json();
-    return routers
+    if (!routersResponse.ok) return emptyResult;
+
+    const routers = await routersResponse.json();
+    const entrypoints = entrypointsResponse.ok
+      ? await entrypointsResponse.json()
+      : [];
+
+    const traefikRouters: TraefikRouter[] = routers
       .filter((r: { rule: string }) => r.rule?.includes("Host("))
       .map(
         (r: {
@@ -281,15 +299,29 @@ async function getTraefikRouters(
           rule: string;
           service: string;
           status: string;
+          entryPoints?: string[];
         }) => ({
           name: r.name,
           rule: r.rule,
           service: r.service,
           status: r.status,
+          entryPoints: r.entryPoints || [],
         })
       );
+
+    const traefikEntrypoints: TraefikEntrypoint[] = entrypoints.map(
+      (ep: { name: string; address: string }) => ({
+        name: ep.name,
+        address: ep.address,
+      })
+    );
+
+    return {
+      routers: traefikRouters,
+      entrypoints: traefikEntrypoints,
+    };
   } catch {
-    return [];
+    return emptyResult;
   }
 }
 
@@ -311,11 +343,12 @@ function extractTraefikApiPort(
 
 function findRouterForContainer(
   container: ContainerInfo,
-  routers: TraefikRouter[]
+  traefikInfo: TraefikInfo,
+  host: DockerHost
 ): string | undefined {
   const containerName = container.Names[0]?.replace(/^\//, "") || "";
 
-  for (const router of routers) {
+  for (const router of traefikInfo.routers) {
     // Check if router's service matches container name
     if (
       router.service.includes(containerName) ||
@@ -323,11 +356,60 @@ function findRouterForContainer(
     ) {
       const hostMatch = router.rule.match(/Host\(`([^`]+)`\)/);
       if (hostMatch) {
-        return hostMatch[1];
+        const hostname = hostMatch[1];
+        const port = getEntrypointPort(router.entryPoints, traefikInfo.entrypoints);
+        if (port) {
+          const protocol = port === 443 || port === 8443 ? "https" : "http";
+          return `${protocol}://${hostname}:${port}`;
+        }
+        const protocol = router.entryPoints.includes("websecure") ? "https" : "http";
+        return `${protocol}://${hostname}`;
       }
     }
   }
   return undefined;
+}
+
+function getEntrypointPort(
+  entryPoints: string[],
+  allEntrypoints: TraefikEntrypoint[]
+): number | undefined {
+  if (!entryPoints || entryPoints.length === 0) return undefined;
+
+  // Priority order for entrypoints
+  const priorityOrder = ["websecure", "web", "https", "http", "traefik"];
+
+  for (const priorityName of priorityOrder) {
+    if (entryPoints.includes(priorityName)) {
+      const ep = allEntrypoints.find((e) => e.name === priorityName);
+      if (ep?.address) {
+        const parsedPort = parseAddressPort(ep.address);
+        if (parsedPort) return parsedPort;
+      }
+    }
+  }
+
+  // Fallback: check all other entrypoints
+  for (const epName of entryPoints) {
+    const ep = allEntrypoints.find((e) => e.name === epName);
+    if (ep?.address) {
+      const parsedPort = parseAddressPort(ep.address);
+      if (parsedPort) return parsedPort;
+    }
+  }
+
+  return undefined;
+}
+
+function parseAddressPort(address: string): number | undefined {
+  // Address format: ":80", ":443", "0.0.0.0:80", "[::]:80", "127.0.0.1:8080/tcp"
+  const trimmed = address.replace(/\/tcp$/, "").replace(/\/udp$/, "");
+  const lastColon = trimmed.lastIndexOf(":");
+  if (lastColon === -1) return undefined;
+
+  const portStr = trimmed.slice(lastColon + 1);
+  const port = parseInt(portStr, 10);
+  return isNaN(port) ? undefined : port;
 }
 
 function inferGroup(
