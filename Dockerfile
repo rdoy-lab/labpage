@@ -14,6 +14,11 @@ WORKDIR /app
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 
+ARG DOCKER_IMAGE_VERSION=dev
+ARG GIT_HASH=unknown
+ENV NEXT_PUBLIC_DOCKER_IMAGE_VERSION=${DOCKER_IMAGE_VERSION}
+ENV NEXT_PUBLIC_GIT_HASH=${GIT_HASH}
+
 RUN npm run build
 
 # Production image, copy all the files and run next

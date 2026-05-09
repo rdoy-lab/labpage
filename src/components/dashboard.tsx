@@ -8,6 +8,7 @@ import { Service } from "@/lib/types";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { RefreshCw, Layers, LayoutGrid } from "lucide-react";
+import { version } from "../../package.json";
 
 function cn(...classes: (string | boolean | undefined)[]) {
   return classes.filter(Boolean).join(" ");
@@ -200,6 +201,16 @@ export function Dashboard() {
           </Tabs>
         )}
       </main>
+
+      <footer className="border-t py-6">
+        <div className="container mx-auto max-w-6xl px-6 text-center text-sm text-muted-foreground space-y-1">
+          <div>LabPage v{version}</div>
+          <div className="text-xs">
+            <span>Image: {process.env.NEXT_PUBLIC_DOCKER_IMAGE_VERSION}</span>
+            <span> · Commit: {process.env.NEXT_PUBLIC_GIT_HASH}</span>
+          </div>
+        </div>
+      </footer>
     </div>
   );
 }
