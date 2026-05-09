@@ -135,11 +135,14 @@ function extractService(
   // Determine group
   const group = labels["labpage.group"] || inferGroup(labels, container.Image);
 
-  // Determine URL with priority system
-  const url = detectUrl(container, traefikInfo, labels, host);
+  // Determine URL with priority system and discovery source
+  const { url, urlSource } = detectUrl(container, traefikInfo, labels, host);
 
   // Determine health check path
   const checkPath = labels["labpage.checkPath"] || "/";
+
+  // Determine description based on how URL was discovered
+  const description = urlSource ? `${urlSource}: ${url}` : undefined;
 
   // Extract compose project info
   const composeProject = labels["com.docker.compose.project"] || undefined;
@@ -152,6 +155,7 @@ function extractService(
     group,
     source: "docker",
     containerId: container.Id,
+    description,
     checkPath,
     status: container.State === "running" ? "unknown" : "offline",
     composeProject,
@@ -164,12 +168,15 @@ function detectUrl(
   traefikInfo: TraefikInfo,
   labels: Record<string, string>,
   host: DockerHost
-): string | undefined {
+): { url?: string; urlSource?: string } {
   const hostIp = getHostIp(host);
 
   // Priority 1: Manual override
   if (labels["labpage.url"]) {
-    return replaceLocalhost(labels["labpage.url"], hostIp);
+    return {
+      url: replaceLocalhost(labels["labpage.url"], hostIp),
+      urlSource: "Manual",
+    };
   }
 
   // Priority 2: Traefik hostname from labels
@@ -179,22 +186,31 @@ function detectUrl(
     const url = traefikHostname.startsWith("http")
       ? traefikHostname
       : `${protocol}://${traefikHostname}`;
-    return replaceLocalhost(url, hostIp);
+    return {
+      url: replaceLocalhost(url, hostIp),
+      urlSource: "Traefik",
+    };
   }
 
   // Priority 3: Traefik admin API routers
   const routerUrl = findRouterForContainer(container, traefikInfo, host);
   if (routerUrl) {
-    return replaceLocalhost(routerUrl, hostIp);
+    return {
+      url: replaceLocalhost(routerUrl, hostIp),
+      urlSource: "Traefik",
+    };
   }
 
   // Priority 4: Published ports
   const portUrl = extractPortUrl(container.Ports, host);
   if (portUrl) {
-    return replaceLocalhost(portUrl, hostIp);
+    return {
+      url: replaceLocalhost(portUrl, hostIp),
+      urlSource: "Port",
+    };
   }
 
-  return undefined;
+  return {};
 }
 
 function extractTraefikHostname(
