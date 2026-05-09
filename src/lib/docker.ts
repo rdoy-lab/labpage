@@ -175,9 +175,10 @@ function detectUrl(
   // Priority 2: Traefik hostname from labels
   const traefikHostname = extractTraefikHostname(labels);
   if (traefikHostname) {
+    const protocol = guessProtocolFromLabels(labels) ? "https" : "http";
     const url = traefikHostname.startsWith("http")
       ? traefikHostname
-      : `https://${traefikHostname}`;
+      : `${protocol}://${traefikHostname}`;
     return replaceLocalhost(url, hostIp);
   }
 
@@ -209,6 +210,26 @@ function extractTraefikHostname(
     }
   }
   return undefined;
+}
+
+function guessProtocolFromLabels(labels: Record<string, string>): boolean {
+  // Check for TLS/cert resolver or entrypoint=websecure in router labels
+  for (const [key, value] of Object.entries(labels)) {
+    if (!key.includes("traefik.http.routers") || !key.includes(".")) {
+      continue;
+    }
+    const suffix = key.split(".").pop();
+    if (suffix === "tls") {
+      return value === "true";
+    }
+    if (suffix === "entrypoints" && value.toLowerCase().includes("websecure")) {
+      return true;
+    }
+    if (suffix === "entrypoints" && value.toLowerCase() === "web") {
+      return false;
+    }
+  }
+  return false;
 }
 
 function extractPortUrl(
@@ -358,10 +379,17 @@ function findRouterForContainer(
       if (hostMatch) {
         const hostname = hostMatch[1];
         const port = getEntrypointPort(router.entryPoints, traefikInfo.entrypoints);
+        if (port === 80) {
+          return `http://${hostname}`;
+        }
+        if (port === 443 || port === 8443) {
+          return `https://${hostname}`;
+        }
         if (port) {
-          const protocol = port === 443 || port === 8443 ? "https" : "http";
+          const protocol = router.entryPoints.includes("websecure") ? "https" : "http";
           return `${protocol}://${hostname}:${port}`;
         }
+        // Fallback: determine protocol purely by entrypoint name if no port resolved
         const protocol = router.entryPoints.includes("websecure") ? "https" : "http";
         return `${protocol}://${hostname}`;
       }
