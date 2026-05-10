@@ -5,10 +5,11 @@ Self-hosted dashboard that auto-discovers services from Docker and Kubernetes. Z
 ## Features
 
 - **Auto-discovery** - Finds running Docker containers automatically
-- **Kubernetes integration** - Discovers services from Kubernetes clusters
+- **Kubernetes integration** - Discovers services from Kubernetes (Ingresses, Gateway API, LoadBalancer/NodePort)
 - **Traefik integration** - Detects hostnames from Traefik labels and admin API
 - **Docker Compose stacks** - Groups containers by compose project
-- **Favicon detection** - Fetches and displays service favicons
+- **Kubernetes namespaces** - Groups services by namespace
+- **Favicon detection** - Proxies and caches service favicons automatically
 - **Health monitoring** - HTTP checks with online/offline indicators
 - **Single config file** - Everything in a YAML config file
 - **Dark/light theme** - System-aware with manual override
@@ -111,6 +112,8 @@ services:
     source: manual
 ```
 
+Manual services are persisted to config.yaml. Discovered services are kept in memory.
+
 ## URL Detection
 
 Services are prioritized by accessibility:
@@ -162,13 +165,15 @@ src/
 │   │   ├── groups/         # Group management
 │   │   ├── health/         # Health check API
 │   │   └── services/       # Service CRUD + refresh
-│   ├── settings/           # Settings page
-│   └── page.tsx            # Dashboard
+│   ├── layout.tsx          # Root layout
+│   ├── page.tsx            # Dashboard
+│   └── globals.css         # Global styles
 ├── components/
 │   ├── dashboard.tsx       # Main dashboard with tabs
 │   ├── service-card.tsx    # Service card with favicon
 │   ├── service-group.tsx   # Collapsible group
 │   ├── stack-group.tsx     # Compose stack container
+│   ├── theme-provider.tsx  # Theme provider
 │   └── ui/                 # shadcn/ui components
 └── lib/
     ├── config.ts           # YAML config parser
@@ -193,4 +198,3 @@ src/
 - [dockerode](https://github.com/apocas/dockerode) - Docker API
 - [@kubernetes/client-node](https://github.com/kubernetes-client/javascript) - Kubernetes API
 - [js-yaml](https://github.com/nodeca/js-yaml) - YAML parsing
-
