@@ -29,7 +29,7 @@ export async function POST() {
 
     const merged = { ...config.services, ...updatedDiscovered };
     return NextResponse.json({ ...config, services: merged });
-  } catch (_error) {
+  } catch {
     return NextResponse.json(
       { error: "Failed to check health" },
       { status: 500 }

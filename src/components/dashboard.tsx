@@ -16,7 +16,6 @@ function cn(...classes: (string | boolean | undefined)[]) {
 export function Dashboard() {
   const config = useStore((s) => s.config);
   const loading = useStore((s) => s.loading);
-  const error = useStore((s) => s.error);
   const refreshDocker = useStore((s) => s.refreshDocker);
   const updateGroup = useStore((s) => s.updateGroup);
   const checkHealth = useStore((s) => s.checkHealth);
@@ -28,7 +27,7 @@ export function Dashboard() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const services = config?.services || {};
+  const services = useMemo(() => config?.services || {}, [config?.services]);
   const serviceCount = Object.values(services).filter(
     (s) => s.status !== "removed"
   ).length;

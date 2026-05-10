@@ -8,7 +8,7 @@ export async function GET() {
     const discovered = getDiscoveredServices();
     const merged = { ...config.services, ...discovered };
     return NextResponse.json({ ...config, services: merged });
-  } catch (_error) {
+  } catch {
     return NextResponse.json(
       { error: "Failed to load config" },
       { status: 500 }

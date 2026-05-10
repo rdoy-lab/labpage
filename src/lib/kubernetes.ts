@@ -1,18 +1,5 @@
 import * as k8s from "@kubernetes/client-node";
-import os from "os";
-import { KubernetesConfig, Service, Services } from "./types";
-
-function getMachineIp(): string {
-  const interfaces = os.networkInterfaces();
-  for (const name in interfaces) {
-    for (const iface of interfaces[name] || []) {
-      if (iface.family === "IPv4" && !iface.internal) {
-        return iface.address;
-      }
-    }
-  }
-  return "localhost";
-}
+import { KubernetesConfig, Services } from "./types";
 
 function loadKubeConfig(config: KubernetesConfig): k8s.KubeConfig {
   const kc = new k8s.KubeConfig();
@@ -92,10 +79,6 @@ interface IngressRule {
 
 interface IngressTls {
   hosts?: string[];
-}
-
-interface GatewayHost {
-  hostname?: string;
 }
 
 interface GatewayListener {
@@ -317,7 +300,7 @@ function processHttpRoute(
   if (!spec) return;
 
   // Get hostnames from the route or parent gateways
-  let hostnames: string[] = spec.hostnames || [];
+  const hostnames: string[] = spec.hostnames || [];
 
   // If no hostnames on route, try to get from parent gateway listeners
   if (hostnames.length === 0 && spec.parentRefs) {

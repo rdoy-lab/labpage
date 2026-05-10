@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Image from "next/image";
 import { Service } from "@/lib/types";
 import { Card, CardContent } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
@@ -51,10 +52,13 @@ function ServiceIcon({ service }: { service: Service }) {
 
   if (faviconUrl && !faviconFailed) {
     return (
-      <img
+      <Image
         src={faviconUrl}
         alt={service.name}
+        width={32}
+        height={32}
         className="h-8 w-8 object-contain"
+        unoptimized
         onError={() => setFaviconFailed(true)}
       />
     );

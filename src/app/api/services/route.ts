@@ -9,7 +9,7 @@ export async function GET() {
     const discovered = getDiscoveredServices();
     const merged = { ...config.services, ...discovered };
     return NextResponse.json(merged);
-  } catch (_error) {
+  } catch {
     return NextResponse.json(
       { error: "Failed to load services" },
       { status: 500 }
@@ -40,7 +40,7 @@ export async function POST(request: Request) {
     const discovered = getDiscoveredServices();
     const merged = { ...updated.services, ...discovered };
     return NextResponse.json(merged);
-  } catch (_error) {
+  } catch {
     return NextResponse.json(
       { error: "Failed to add service" },
       { status: 500 }

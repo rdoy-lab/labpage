@@ -31,7 +31,7 @@ export async function PUT(
       { error: "Service not found" },
       { status: 404 }
     );
-  } catch (_error) {
+  } catch {
     return NextResponse.json(
       { error: "Failed to update service" },
       { status: 500 }
@@ -60,7 +60,7 @@ export async function DELETE(
     const discovered = getDiscoveredServices();
     const merged = { ...updated.services, ...discovered };
     return NextResponse.json(merged);
-  } catch (_error) {
+  } catch {
     return NextResponse.json(
       { error: "Failed to delete service" },
       { status: 500 }

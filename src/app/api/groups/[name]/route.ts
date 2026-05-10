@@ -21,7 +21,7 @@ export async function PUT(
     const discovered = getDiscoveredServices();
     const merged = { ...updated.services, ...discovered };
     return NextResponse.json({ ...updated, services: merged });
-  } catch (_error) {
+  } catch {
     return NextResponse.json(
       { error: "Failed to update group" },
       { status: 500 }

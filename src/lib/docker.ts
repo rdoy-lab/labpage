@@ -97,8 +97,7 @@ export async function discoverServices(
         const service = extractService(
           container,
           traefikInfo,
-          host,
-          docker
+          host
         );
         if (service) {
           services[container.Id] = service;
@@ -115,8 +114,7 @@ export async function discoverServices(
 function extractService(
   container: ContainerInfo,
   traefikInfo: TraefikInfo,
-  host: DockerHost,
-  docker: Docker
+  host: DockerHost
 ): Service | null {
   const labels = container.Labels || {};
   const name = container.Names[0]?.replace(/^\//, "") || container.Id.slice(0, 12);
@@ -193,7 +191,7 @@ function detectUrl(
   }
 
   // Priority 3: Traefik admin API routers
-  const routerUrl = findRouterForContainer(container, traefikInfo, host);
+  const routerUrl = findRouterForContainer(container, traefikInfo);
   if (routerUrl) {
     return {
       url: replaceLocalhost(routerUrl, hostIp),
@@ -263,7 +261,7 @@ function extractPortUrl(
     );
     if (port && port.PublicPort) {
       // Use binding IP if specific (not 0.0.0.0), otherwise use host IP
-      let hostIp = port.IP && port.IP !== "0.0.0.0" ? port.IP : getHostIp(host);
+      const hostIp = port.IP && port.IP !== "0.0.0.0" ? port.IP : getHostIp(host);
       const protocol = port.PublicPort === 443 || port.PublicPort === 8443
         ? "https"
         : "http";
@@ -274,7 +272,7 @@ function extractPortUrl(
   // Fallback to first published port
   const publishedPort = ports.find((p) => p.PublicPort);
   if (publishedPort && publishedPort.PublicPort) {
-    let hostIp = publishedPort.IP && publishedPort.IP !== "0.0.0.0"
+    const hostIp = publishedPort.IP && publishedPort.IP !== "0.0.0.0"
       ? publishedPort.IP
       : getHostIp(host);
     return `http://${hostIp}:${publishedPort.PublicPort}`;
@@ -380,8 +378,7 @@ function extractTraefikApiPort(
 
 function findRouterForContainer(
   container: ContainerInfo,
-  traefikInfo: TraefikInfo,
-  host: DockerHost
+  traefikInfo: TraefikInfo
 ): string | undefined {
   const containerName = container.Names[0]?.replace(/^\//, "") || "";
 
