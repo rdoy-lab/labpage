@@ -77,12 +77,14 @@ function ServiceIcon({ service }: { service: Service }) {
 }
 
 export function ServiceCard({ service, onClick }: ServiceCardProps) {
-  const statusColor = {
-    online: "bg-green-500",
-    offline: "bg-red-500",
-    unknown: "bg-yellow-500",
-    removed: "bg-gray-500",
-  }[service.status || "unknown"];
+  const statusColor = service.url
+    ? {
+        online: "bg-green-500",
+        offline: "bg-red-500",
+        unknown: "bg-yellow-500",
+        removed: "bg-gray-500",
+      }[service.status || "unknown"]
+    : "bg-gray-500";
 
   const Wrapper = service.url ? "a" : "div";
   const wrapperProps = service.url
