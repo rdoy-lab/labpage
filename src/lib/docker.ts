@@ -64,11 +64,38 @@ function getDefaultRouteInterface(): string | undefined {
   return undefined;
 }
 
+function tryResolveDockerInternal(): string | undefined {
+  try {
+    const hosts = fs.readFileSync("/etc/hosts", "utf-8");
+    for (const line of hosts.split("\n")) {
+      const trimmed = line.trim();
+      if (trimmed && !trimmed.startsWith("#")) {
+        const parts = trimmed.split(/\s+/);
+        if (parts.length >= 2 && parts.slice(1).includes("host.docker.internal")) {
+          return parts[0];
+        }
+      }
+    }
+  } catch {}
+  return undefined;
+}
+
 function getMachineIp(): string {
+  // Priority 1: Explicit env var override (useful when running inside Docker)
+  if (process.env.HOST_IP) {
+    return process.env.HOST_IP;
+  }
+
   const interfaces = os.networkInterfaces();
   const defaultIface = getDefaultRouteInterface();
 
-  // Prefer the interface used for the default route
+  // Priority 2: host.docker.internal (set via --add-host)
+  const dockerInternal = tryResolveDockerInternal();
+  if (dockerInternal) {
+    return dockerInternal;
+  }
+
+  // Priority 3: IP of the default route interface (e.g., eth0)
   if (defaultIface && interfaces[defaultIface]) {
     for (const iface of interfaces[defaultIface]) {
       if (iface.family === "IPv4" && !iface.internal) {
@@ -77,7 +104,7 @@ function getMachineIp(): string {
     }
   }
 
-  // Fallback to any non-internal IPv4
+  // Priority 4: Any non-internal IPv4
   for (const name in interfaces) {
     for (const iface of interfaces[name] || []) {
       if (iface.family === "IPv4" && !iface.internal) {
@@ -89,6 +116,9 @@ function getMachineIp(): string {
 }
 
 function getHostIp(host: DockerHost): string {
+  if (host.hostIp) {
+    return host.hostIp;
+  }
   if (host.host) {
     try {
       return new URL(host.host).hostname;

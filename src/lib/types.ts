@@ -37,6 +37,7 @@ export interface DockerTraefik {
 export interface DockerHost {
   socket?: string;
   host?: string;
+  hostIp?: string;
 }
 
 export interface DockerConfig {
