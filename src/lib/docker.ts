@@ -1,4 +1,5 @@
 import Docker from "dockerode";
+import fs from "fs";
 import os from "os";
 import { DockerConfig, DockerHost, Service, Services } from "./types";
 
@@ -49,8 +50,34 @@ export function createDockerClient(host: DockerHost): Docker {
   return new Docker({ socketPath: "/var/run/docker.sock" });
 }
 
+function getDefaultRouteInterface(): string | undefined {
+  try {
+    const route = fs.readFileSync("/proc/net/route", "utf-8");
+    const lines = route.split("\n");
+    for (let i = 1; i < lines.length; i++) {
+      const parts = lines[i].split(/\s+/);
+      if (parts.length > 1 && parts[1] === "00000000") {
+        return parts[0];
+      }
+    }
+  } catch {}
+  return undefined;
+}
+
 function getMachineIp(): string {
   const interfaces = os.networkInterfaces();
+  const defaultIface = getDefaultRouteInterface();
+
+  // Prefer the interface used for the default route
+  if (defaultIface && interfaces[defaultIface]) {
+    for (const iface of interfaces[defaultIface]) {
+      if (iface.family === "IPv4" && !iface.internal) {
+        return iface.address;
+      }
+    }
+  }
+
+  // Fallback to any non-internal IPv4
   for (const name in interfaces) {
     for (const iface of interfaces[name] || []) {
       if (iface.family === "IPv4" && !iface.internal) {
