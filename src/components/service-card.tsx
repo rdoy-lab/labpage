@@ -9,6 +9,7 @@ import { cn } from "@/lib/utils";
 interface ServiceCardProps {
   service: Service;
   onClick?: () => void;
+  compact?: boolean;
 }
 
 function getFaviconProxyUrl(url: string): string {
@@ -45,10 +46,36 @@ function getColorFromName(name: string): string {
   return colors[Math.abs(hash) % colors.length];
 }
 
-function ServiceIcon({ service }: { service: Service }) {
+function ServiceIcon({ service, compact }: { service: Service; compact?: boolean }) {
   const [faviconFailed, setFaviconFailed] = useState(false);
   const faviconUrl = service.url ? getFaviconProxyUrl(service.url) : "";
   const bgColor = getColorFromName(service.name);
+
+  if (compact) {
+    if (faviconUrl && !faviconFailed) {
+      return (
+        <Image
+          src={faviconUrl}
+          alt={service.name}
+          width={16}
+          height={16}
+          className="h-4 w-4 object-contain"
+          unoptimized
+          onError={() => setFaviconFailed(true)}
+        />
+      );
+    }
+    return (
+      <span
+        className={cn(
+          "flex h-6 w-6 items-center justify-center rounded text-xs font-bold text-white shrink-0",
+          bgColor
+        )}
+      >
+        {getInitial(service.name)}
+      </span>
+    );
+  }
 
   if (faviconUrl && !faviconFailed) {
     return (
@@ -76,7 +103,7 @@ function ServiceIcon({ service }: { service: Service }) {
   );
 }
 
-export function ServiceCard({ service, onClick }: ServiceCardProps) {
+export function ServiceCard({ service, onClick, compact }: ServiceCardProps) {
   const statusColor = service.url
     ? {
         online: "bg-green-500",
@@ -101,19 +128,28 @@ export function ServiceCard({ service, onClick }: ServiceCardProps) {
         )}
         onClick={onClick}
       >
-        <CardContent className="flex items-center gap-4 p-4">
+        <CardContent className={cn("flex items-center gap-3", compact ? "p-2" : "gap-4 p-4")}>
           <div className="relative shrink-0">
-            <ServiceIcon service={service} />
-            <span
-              className={cn(
-                "absolute -right-1 -top-1 h-3 w-3 rounded-full border-2 border-background",
-                statusColor
-              )}
-            />
+            <ServiceIcon service={service} compact={compact} />
+            {compact ? (
+              <span
+                className={cn(
+                  "absolute -right-0.5 -top-0.5 h-2 w-2 rounded-full border border-background",
+                  statusColor
+                )}
+              />
+            ) : (
+              <span
+                className={cn(
+                  "absolute -right-1 -top-1 h-3 w-3 rounded-full border-2 border-background",
+                  statusColor
+                )}
+              />
+            )}
           </div>
           <div className="min-w-0 flex-1">
-            <h3 className="truncate font-semibold">{service.name}</h3>
-            {service.description && (
+            <h3 className={cn("truncate", compact ? "text-sm font-medium" : "font-semibold")}>{service.name}</h3>
+            {!compact && service.description && (
               <p className="truncate text-sm text-muted-foreground">
                 {service.description}
               </p>

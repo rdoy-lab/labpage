@@ -22,24 +22,24 @@ export function StackGroup({ name, services }: StackGroupProps) {
 
   return (
     <Card>
-      <CardHeader className="pb-3">
-        <CardTitle className="flex items-center gap-2 text-lg">
-          <Layers className="h-5 w-5 text-muted-foreground" />
+      <CardHeader className="pb-2">
+        <CardTitle className="flex items-center gap-2 text-base">
+          <Layers className="h-4 w-4 text-muted-foreground" />
           {name}
-          <span className="ml-auto text-sm font-normal text-muted-foreground">
+          <span className="ml-auto text-xs font-normal text-muted-foreground">
             {services.length} {services.length === 1 ? "service" : "services"}
           </span>
         </CardTitle>
       </CardHeader>
-      <CardContent>
+      <CardContent className="pb-3">
         <div
-          className="grid gap-4"
+          className="grid gap-2"
           style={{
-            gridTemplateColumns: "repeat(auto-fill, minmax(280px, 1fr))",
+            gridTemplateColumns: "repeat(auto-fill, minmax(200px, 1fr))",
           }}
         >
           {sortedServices.map(([id, service]) => (
-            <ServiceCard key={id} service={service} />
+            <ServiceCard key={id} service={service} compact />
           ))}
         </div>
       </CardContent>

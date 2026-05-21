@@ -175,18 +175,18 @@ export function Dashboard() {
                   No stacks detected.
                 </div>
               ) : (
-                <div className="space-y-8">
+                <div className="space-y-4">
                   {sortedStacks.map(([name, services]) => (
                     <StackGroup key={name} name={name} services={services} />
                   ))}
                   {sortedNamespaces.length > 0 && (
                     <>
                       {sortedStacks.length > 0 && (
-                        <h2 className="mt-10 text-lg font-semibold text-muted-foreground">
+                        <h2 className="pt-4 text-sm font-semibold text-muted-foreground">
                           Kubernetes Namespaces
                         </h2>
                       )}
-                      <div className="space-y-6">
+                      <div className="space-y-4">
                         {sortedNamespaces.map(([name, services]) => (
                           <StackGroup key={name} name={name} services={services} />
                         ))}
