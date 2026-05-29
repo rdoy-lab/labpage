@@ -8,10 +8,7 @@ import { Service } from "@/lib/types";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { RefreshCw, Layers, LayoutGrid } from "lucide-react";
-
-function cn(...classes: (string | boolean | undefined)[]) {
-  return classes.filter(Boolean).join(" ");
-}
+import { cn } from "@/lib/utils";
 
 export function Dashboard() {
   const config = useStore((s) => s.config);
@@ -28,16 +25,13 @@ export function Dashboard() {
   }, []);
 
   const services = useMemo(() => config?.services || {}, [config?.services]);
-  const serviceCount = Object.values(services).filter(
-    (s) => s.status !== "removed"
-  ).length;
+  const serviceCount = Object.values(services).length;
 
   // Group services by their group field
   const groupedServices = useMemo(() => {
     const groups = new Map<string, Array<[string, Service]>>();
 
     for (const [id, service] of Object.entries(services)) {
-      if (service.status === "removed") continue;
       const groupName = service.group || "Other";
       if (!groups.has(groupName)) groups.set(groupName, []);
       groups.get(groupName)!.push([id, service]);
@@ -60,7 +54,7 @@ export function Dashboard() {
   const stackedServices = useMemo(() => {
     const stacks = new Map<string, Array<[string, Service]>>();
     for (const [id, service] of Object.entries(services)) {
-      if (service.status === "removed" || !service.composeProject) continue;
+      if (!service.composeProject) continue;
       const projectName = service.composeProject;
       if (!stacks.has(projectName)) stacks.set(projectName, []);
       stacks.get(projectName)!.push([id, service]);
@@ -77,7 +71,7 @@ export function Dashboard() {
   const kubernetesByNamespace = useMemo(() => {
     const namespaces = new Map<string, Array<[string, Service]>>();
     for (const [id, service] of Object.entries(services)) {
-      if (service.status === "removed" || service.source !== "kubernetes" || !service.namespace) continue;
+      if (service.source !== "kubernetes" || !service.namespace) continue;
       const ns = service.namespace;
       if (!namespaces.has(ns)) namespaces.set(ns, []);
       namespaces.get(ns)!.push([id, service]);

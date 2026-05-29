@@ -1,10 +1,8 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect } from "react";
 
 export function ThemeProvider({ children }: { children: React.ReactNode }) {
-  const [mounted, setMounted] = useState(false);
-
   const applyTheme = useCallback((theme: string) => {
     const root = document.documentElement;
     root.classList.remove("light", "dark");
@@ -22,16 +20,7 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     const savedTheme = localStorage.getItem("labpage-theme") || "system";
     applyTheme(savedTheme);
-
-    // Use requestAnimationFrame to defer setState
-    requestAnimationFrame(() => {
-      setMounted(true);
-    });
   }, [applyTheme]);
-
-  if (!mounted) {
-    return <>{children}</>;
-  }
 
   return <>{children}</>;
 }

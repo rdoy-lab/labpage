@@ -7,7 +7,7 @@ export interface Service {
   containerId?: string;
   description?: string;
   checkPath?: string;
-  status?: "online" | "offline" | "unknown" | "removed";
+  status?: "online" | "offline" | "unknown";
   lastChecked?: string;
   composeProject?: string;
   composeService?: string;

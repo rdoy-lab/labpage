@@ -9,7 +9,6 @@ interface StoreState {
   error: string | null;
 
   // Actions
-  fetchConfig: () => Promise<void>;
   updateService: (id: string, service: Partial<Service>) => Promise<void>;
   deleteService: (id: string) => Promise<void>;
   addService: (id: string, service: Service) => Promise<void>;
@@ -22,18 +21,6 @@ export const useStore = create<StoreState>((set) => ({
   config: null,
   loading: false,
   error: null,
-
-  fetchConfig: async () => {
-    set({ loading: true, error: null });
-    try {
-      const response = await fetch("/api/config");
-      if (!response.ok) throw new Error("Failed to fetch config");
-      const config = await response.json();
-      set({ config, loading: false });
-    } catch (error) {
-      set({ error: (error as Error).message, loading: false });
-    }
-  },
 
   updateService: async (id, updates) => {
     try {

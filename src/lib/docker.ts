@@ -96,7 +96,7 @@ export async function discoverServices(
       // Try to get Traefik routers if enabled
       let traefikInfo: TraefikInfo = { routers: [], entrypoints: [] };
       if (config.traefik.enabled) {
-        traefikInfo = await getTraefikInfo(docker, config);
+        traefikInfo = await getTraefikInfo(docker, config, containers);
       }
 
       for (const container of containers) {
@@ -289,13 +289,12 @@ function extractPortUrl(
 
 async function getTraefikInfo(
   docker: Docker,
-  config: DockerConfig
+  config: DockerConfig,
+  containers: ContainerInfo[]
 ): Promise<TraefikInfo> {
   const emptyResult: TraefikInfo = { routers: [], entrypoints: [] };
 
   try {
-    // Try to find Traefik container
-    const containers = (await docker.listContainers()) as ContainerInfo[];
     const traefikContainer = containers.find(
       (c) =>
         c.Image.includes("traefik") ||
