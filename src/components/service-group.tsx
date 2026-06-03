@@ -6,6 +6,7 @@ import { ServiceCard } from "./service-card";
 import { Button } from "@/components/ui/button";
 import { ChevronDown, ChevronRight } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useFavorites } from "@/lib/favorites";
 
 interface ServiceGroupProps {
   name: string;
@@ -21,14 +22,18 @@ export function ServiceGroup({
   onToggleCollapse,
 }: ServiceGroupProps) {
   const [collapsed, setCollapsed] = useState(meta?.collapsed ?? false);
+  const { isFavorite } = useFavorites();
 
   const handleToggle = () => {
     setCollapsed(!collapsed);
     onToggleCollapse?.();
   };
 
-  // Sort services: ones with favicons first, then URLs, then alphabetical
+  // Sort services: favorites first, then favicons, then URLs, then alphabetical
   const sortedServices = [...services].sort((a, b) => {
+    const favA = isFavorite(a[0]) ? 0 : 1;
+    const favB = isFavorite(b[0]) ? 0 : 1;
+    if (favA !== favB) return favA - favB;
     if (a[1].hasFavicon && !b[1].hasFavicon) return -1;
     if (!a[1].hasFavicon && b[1].hasFavicon) return 1;
     if (a[1].url && !b[1].url) return -1;
@@ -63,7 +68,7 @@ export function ServiceGroup({
         }}
       >
         {sortedServices.map(([id, service]) => (
-          <ServiceCard key={id} service={service} />
+          <ServiceCard key={id} id={id} service={service} />
         ))}
       </div>
     </div>

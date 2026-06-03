@@ -5,8 +5,11 @@ import Image from "next/image";
 import { Service } from "@/lib/types";
 import { Card, CardContent } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
+import { Star } from "lucide-react";
+import { useFavorites } from "@/lib/favorites";
 
 interface ServiceCardProps {
+  id: string;
   service: Service;
   onClick?: () => void;
   compact?: boolean;
@@ -103,7 +106,9 @@ function ServiceIcon({ service, compact }: { service: Service; compact?: boolean
   );
 }
 
-export function ServiceCard({ service, onClick, compact }: ServiceCardProps) {
+export function ServiceCard({ id, service, onClick, compact }: ServiceCardProps) {
+  const { isFavorite, toggleFavorite } = useFavorites();
+  const favorited = isFavorite(id);
   const statusColor = service.url
     ? {
         online: "bg-green-500",
@@ -155,6 +160,25 @@ export function ServiceCard({ service, onClick, compact }: ServiceCardProps) {
               </p>
             )}
           </div>
+          <button
+            type="button"
+            onClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              toggleFavorite(id);
+            }}
+            className="shrink-0 rounded p-1 transition-colors hover:bg-accent"
+            aria-label={favorited ? "Remove from favorites" : "Add to favorites"}
+          >
+            <Star
+              className={cn(
+                "h-4 w-4 transition-colors",
+                favorited
+                  ? "fill-yellow-400 text-yellow-400"
+                  : "text-muted-foreground hover:text-yellow-400"
+              )}
+            />
+          </button>
         </CardContent>
       </Card>
     </Wrapper>
