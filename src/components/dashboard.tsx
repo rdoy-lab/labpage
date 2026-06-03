@@ -170,6 +170,11 @@ export function Dashboard() {
                 </div>
               ) : (
                 <div className="space-y-4">
+                  {sortedStacks.length > 0 && sortedNamespaces.length > 0 && (
+                    <h2 className="text-sm font-semibold text-muted-foreground">
+                      Docker Compose Stacks
+                    </h2>
+                  )}
                   {sortedStacks.map(([name, services]) => (
                     <StackGroup key={name} name={name} services={services} />
                   ))}
