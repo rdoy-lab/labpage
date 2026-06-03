@@ -18,12 +18,8 @@ function subscribe(callback: () => void): () => void {
   return () => window.removeEventListener("storage", callback);
 }
 
-function getServerSnapshot(): Set<string> {
-  return new Set();
-}
-
 export function useFavorites() {
-  const favorites = useSyncExternalStore(subscribe, getSnapshot, getServerSnapshot);
+  const favorites = useSyncExternalStore(subscribe, getSnapshot, getSnapshot);
 
   const toggleFavorite = useCallback((serviceId: string) => {
     const current = getSnapshot();
