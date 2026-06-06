@@ -149,9 +149,9 @@ export function ServiceCard({ service, onClick, compact }: ServiceCardProps) {
           </div>
           <div className="min-w-0 flex-1">
             <h3 className={cn("truncate", compact ? "text-sm font-medium" : "font-semibold")}>{service.name}</h3>
-            {!compact && (service.description || (service.source === "manual" && service.url)) && (
+            {!compact && service.description && (
               <p className="truncate text-sm text-muted-foreground">
-                {service.description || `Manual: ${service.url}`}
+                {service.description}
               </p>
             )}
           </div>
