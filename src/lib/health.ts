@@ -25,7 +25,7 @@ export async function checkServiceHealth(
         },
         (res) => {
           const code = res.statusCode ?? 0;
-          resolve(code >= 200 && code < 400 ? "online" : "offline");
+          resolve((code >= 200 && code < 400) || code === 401 ? "online" : "offline");
         }
       );
 
