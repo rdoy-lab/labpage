@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { loadConfig } from "@/lib/config";
 import { discoverServices } from "@/lib/docker";
 import { discoverKubernetesServices } from "@/lib/kubernetes";
-import { setDiscoveredServices, getDiscoveredServices } from "@/lib/runtime";
+import { setDiscoveredServices, getDiscoveredServices, getMergedServices } from "@/lib/runtime";
 import { checkFavicon } from "@/lib/favicon";
 import { Services } from "@/lib/types";
 
@@ -55,8 +55,7 @@ export async function POST() {
     await checkFavicons(discovered);
 
     // Return merged view: manual (persisted) + discovered (runtime)
-    const merged = { ...config.services, ...discovered };
-    return NextResponse.json({ ...config, services: merged });
+    return NextResponse.json({ ...config, services: getMergedServices(config.services) });
   } catch (error) {
     console.error("Failed to refresh services:", error);
     return NextResponse.json(

@@ -1,18 +1,12 @@
 import { NextResponse } from "next/server";
 import { loadConfig, updateConfig } from "@/lib/config";
-import { getDiscoveredServices } from "@/lib/runtime";
-import { Service, Services } from "@/lib/types";
+import { getMergedServices } from "@/lib/runtime";
+import { Service } from "@/lib/types";
 
 export async function GET() {
   try {
     const config = await loadConfig();
-    const discovered = getDiscoveredServices();
-    const manualServices: Services = {};
-    for (const [id, service] of Object.entries(config.services)) {
-      manualServices[id] = { ...service, source: "manual" };
-    }
-    const merged = { ...manualServices, ...discovered };
-    return NextResponse.json(merged);
+    return NextResponse.json(getMergedServices(config.services));
   } catch {
     return NextResponse.json(
       { error: "Failed to load services" },
@@ -41,9 +35,7 @@ export async function POST(request: Request) {
     };
 
     const updated = await updateConfig({ services: config.services });
-    const discovered = getDiscoveredServices();
-    const merged = { ...updated.services, ...discovered };
-    return NextResponse.json(merged);
+    return NextResponse.json(getMergedServices(updated.services));
   } catch {
     return NextResponse.json(
       { error: "Failed to add service" },

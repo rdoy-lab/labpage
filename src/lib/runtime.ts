@@ -20,3 +20,11 @@ export function clearDiscoveredServices(): void {
   discoveredServices = {};
   discoveredTimestamp = null;
 }
+
+export function getMergedServices(configServices: Services): Services {
+  const manualServices: Services = {};
+  for (const [id, service] of Object.entries(configServices)) {
+    manualServices[id] = { ...service, source: "manual" };
+  }
+  return { ...manualServices, ...discoveredServices };
+}
