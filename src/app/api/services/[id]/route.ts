@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { loadConfig, updateConfig } from "@/lib/config";
-import { getDiscoveredServices, setDiscoveredServices } from "@/lib/runtime";
+import { getDiscoveredServices, setDiscoveredServices, getMergedServices } from "@/lib/runtime";
 
 export async function PUT(
   request: Request,
@@ -17,14 +17,12 @@ export async function PUT(
       // Update manual service in config
       config.services[id] = { ...config.services[id], ...body };
       const updated = await updateConfig({ services: config.services });
-      const merged = { ...updated.services, ...discovered };
-      return NextResponse.json(merged);
+      return NextResponse.json(getMergedServices(updated.services));
     } else if (discovered[id]) {
       // Update discovered service in memory (e.g., for overrides)
       discovered[id] = { ...discovered[id], ...body };
       setDiscoveredServices(discovered);
-      const merged = { ...config.services, ...discovered };
-      return NextResponse.json(merged);
+      return NextResponse.json(getMergedServices(config.services));
     }
 
     return NextResponse.json(
@@ -57,9 +55,7 @@ export async function DELETE(
 
     delete config.services[id];
     const updated = await updateConfig({ services: config.services });
-    const discovered = getDiscoveredServices();
-    const merged = { ...updated.services, ...discovered };
-    return NextResponse.json(merged);
+    return NextResponse.json(getMergedServices(updated.services));
   } catch {
     return NextResponse.json(
       { error: "Failed to delete service" },

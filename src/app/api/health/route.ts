@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { loadConfig } from "@/lib/config";
 import { checkAllServices } from "@/lib/health";
-import { getDiscoveredServices, setDiscoveredServices } from "@/lib/runtime";
+import { getDiscoveredServices, setDiscoveredServices, getMergedServices } from "@/lib/runtime";
 
 export async function POST() {
   try {
@@ -27,8 +27,7 @@ export async function POST() {
 
     setDiscoveredServices(updatedDiscovered);
 
-    const merged = { ...config.services, ...updatedDiscovered };
-    return NextResponse.json({ ...config, services: merged });
+    return NextResponse.json({ ...config, services: getMergedServices(config.services) });
   } catch {
     return NextResponse.json(
       { error: "Failed to check health" },

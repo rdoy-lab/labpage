@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { loadConfig, updateConfig } from "@/lib/config";
-import { getDiscoveredServices } from "@/lib/runtime";
+import { getMergedServices } from "@/lib/runtime";
 
 export async function PUT(
   request: Request,
@@ -18,9 +18,7 @@ export async function PUT(
     };
 
     const updated = await updateConfig({ groups: config.groups });
-    const discovered = getDiscoveredServices();
-    const merged = { ...updated.services, ...discovered };
-    return NextResponse.json({ ...updated, services: merged });
+    return NextResponse.json({ ...updated, services: getMergedServices(updated.services) });
   } catch {
     return NextResponse.json(
       { error: "Failed to update group" },
