@@ -10,7 +10,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { RefreshCw, Layers, LayoutGrid } from "lucide-react";
 import { cn } from "@/lib/utils";
 
-export function Dashboard() {
+export function Dashboard({ nodeVersion }: { nodeVersion: string }) {
   const config = useStore((s) => s.config);
   const loading = useStore((s) => s.loading);
   const refreshDocker = useStore((s) => s.refreshDocker);
@@ -203,6 +203,7 @@ export function Dashboard() {
         <div className="container mx-auto max-w-6xl px-6 text-center text-xs text-muted-foreground">
           <span>Image: {process.env.NEXT_PUBLIC_DOCKER_IMAGE_VERSION}</span>
           <span> · Commit: {process.env.NEXT_PUBLIC_GIT_HASH}</span>
+          <span> · Node: {nodeVersion}</span>
         </div>
       </footer>
     </div>
