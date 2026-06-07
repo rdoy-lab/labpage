@@ -109,10 +109,9 @@ services:
     url: https://plex.example.com
     icon: plex
     group: Media
-    source: manual
 ```
 
-Manual services are persisted to config.yaml. Discovered services are kept in memory.
+Manual services are persisted to config.yaml. Discovered services are kept in memory. The `source: manual` field is set automatically by the API for any service under `services:` — no need to specify it.
 
 ## URL Detection
 

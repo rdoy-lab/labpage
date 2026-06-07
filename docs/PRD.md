@@ -89,9 +89,9 @@ services:
     url: http://192.168.1.100:3000
     icon: custom-app
     group: Development
-    source: manual
     description: Internal development tool
 ```
+The `source: manual` field is implied for any service under `services:` and set automatically by the API — no need to include it in the YAML.
 
 #### Web UI Configuration
 - Add/edit/delete services via UI
@@ -112,6 +112,7 @@ services:
 - Clickable link to service
 - Status indicator dot (green=online, red=offline, yellow=unknown)
 - Description showing URL detection source
+- Manual services display their URL prefixed with `Manual:`
 
 #### Groups
 - Auto-generated groups from Docker image name heuristics
@@ -209,14 +210,13 @@ services:
     url: https://plex.example.com
     icon: plex
     group: Media
-    source: manual
     description: Media server
 ```
 
 ### Merging Strategy
 - Discovered services are kept in memory (server-side module), not written to disk
-- Manual services (source: manual) are persisted in config.yaml
-- On API reads, manual and discovered services are merged (discovered override manual for same ID)
+- Manual services (any entry under `services:` in config.yaml) are persisted in config.yaml
+- On API reads, the API sets `source: manual` on config-sourced services, and manual and discovered services are merged (discovered override manual for same ID)
 - Service refresh re-discovers all Docker containers and Kubernetes resources
 
 ## Icons
