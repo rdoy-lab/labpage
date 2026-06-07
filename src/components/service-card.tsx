@@ -154,6 +154,11 @@ export function ServiceCard({ service, onClick, compact }: ServiceCardProps) {
                 {service.description}
               </p>
             )}
+            {!compact && service.source === "manual" && service.url && (
+              <p className="truncate text-xs text-muted-foreground">
+                Manual: {service.url}
+              </p>
+            )}
           </div>
         </CardContent>
       </Card>
