@@ -1,13 +1,17 @@
 import { NextResponse } from "next/server";
 import { loadConfig, updateConfig } from "@/lib/config";
 import { getDiscoveredServices } from "@/lib/runtime";
-import { Service } from "@/lib/types";
+import { Service, Services } from "@/lib/types";
 
 export async function GET() {
   try {
     const config = await loadConfig();
     const discovered = getDiscoveredServices();
-    const merged = { ...config.services, ...discovered };
+    const manualServices: Services = {};
+    for (const [id, service] of Object.entries(config.services)) {
+      manualServices[id] = { ...service, source: "manual" };
+    }
+    const merged = { ...manualServices, ...discovered };
     return NextResponse.json(merged);
   } catch {
     return NextResponse.json(
