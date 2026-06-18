@@ -7,11 +7,12 @@ const httpAgent = new http.Agent();
 interface FetchResult {
   status: number;
   headers: Headers;
+  url: string;
   arrayBuffer: () => Promise<ArrayBuffer>;
   text: () => Promise<string>;
 }
 
-function fetchUrl(url: string): Promise<FetchResult> {
+function fetchUrl(url: string, maxRedirects = 5): Promise<FetchResult> {
   return new Promise((resolve, reject) => {
     const mod = url.startsWith("https") ? https : http;
     const req = mod.get(url, { agent: url.startsWith("https") ? insecureAgent : httpAgent, timeout: 5000 }, (res) => {
@@ -23,9 +24,21 @@ function fetchUrl(url: string): Promise<FetchResult> {
         for (const [key, val] of Object.entries(res.headers)) {
           if (val) headers.set(key, Array.isArray(val) ? val.join(", ") : val);
         }
+
+        const status = res.statusCode || 0;
+        if (maxRedirects > 0 && status >= 300 && status < 400) {
+          const location = res.headers.location;
+          if (location) {
+            const redirectUrl = location.startsWith("http") ? location : new URL(location, url).toString();
+            resolve(fetchUrl(redirectUrl, maxRedirects - 1));
+            return;
+          }
+        }
+
         resolve({
-          status: res.statusCode || 0,
+          status,
           headers,
+          url,
           arrayBuffer: () => Promise.resolve(buf.buffer.slice(buf.byteOffset, buf.byteOffset + buf.byteLength)),
           text: () => Promise.resolve(buf.toString("utf-8")),
         });
@@ -57,7 +70,10 @@ async function findFaviconUrl(pageUrl: string): Promise<string> {
         const hrefMatch = tag.match(hrefRegex);
         if (hrefMatch) {
           const href = hrefMatch[1];
-          return href.startsWith("http") ? href : `${origin}${href.startsWith("/") ? "" : "/"}${href}`;
+          if (href.startsWith("http")) return href;
+          const base = new URL(response.url);
+          const resolved = new URL(href, base);
+          return resolved.toString();
         }
       }
     }
