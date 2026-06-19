@@ -5,9 +5,6 @@ import { discoverKubernetesServices } from "@/lib/kubernetes";
 import { setDiscoveredServices, getDiscoveredServices, getMergedServices } from "@/lib/runtime";
 import { checkFavicon } from "@/lib/favicon";
 import { Services } from "@/lib/types";
-import logger from "@/lib/logger";
-
-const log = logger.child({ module: "api/services/refresh" });
 
 async function checkFavicons(services: Services): Promise<Services> {
   const checks = Object.entries(services).map(async ([id, service]) => {
@@ -26,7 +23,6 @@ async function checkFavicons(services: Services): Promise<Services> {
 }
 
 export async function POST() {
-  log.info("Refreshing services");
   try {
     const config = await loadConfig();
 
@@ -61,7 +57,7 @@ export async function POST() {
     // Return merged view: manual (persisted) + discovered (runtime)
     return NextResponse.json({ ...config, services: getMergedServices(config.services) });
   } catch (error) {
-    log.error({ err: error }, "Failed to refresh services");
+    console.error("Failed to refresh services:", error);
     return NextResponse.json(
       { error: "Failed to refresh services" },
       { status: 500 }

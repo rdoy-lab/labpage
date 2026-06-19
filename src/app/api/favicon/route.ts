@@ -1,8 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
 import { fetchFavicon } from "@/lib/favicon";
-import logger from "@/lib/logger";
-
-const log = logger.child({ module: "api/favicon" });
 
 export async function GET(request: NextRequest) {
   const url = request.nextUrl.searchParams.get("url");
@@ -19,11 +16,8 @@ export async function GET(request: NextRequest) {
   const result = await fetchFavicon(url);
 
   if (!result) {
-    log.debug({ url }, "Favicon not found");
     return new NextResponse(null, { status: 404 });
   }
-
-  log.debug({ url, contentType: result.contentType }, "Favicon fetched");
 
   return new NextResponse(result.body, {
     headers: {

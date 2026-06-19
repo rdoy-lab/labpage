@@ -1,8 +1,5 @@
 import https from "node:https";
 import http from "node:http";
-import logger from "./logger";
-
-const log = logger.child({ module: "favicon" });
 
 const insecureAgent = new https.Agent({ rejectUnauthorized: false });
 const httpAgent = new http.Agent();
@@ -130,7 +127,6 @@ export async function fetchFavicon(pageUrl: string): Promise<{ body: ArrayBuffer
   const parsed = new URL(pageUrl);
 
   const faviconUrl = await findFaviconUrl(pageUrl);
-  log.debug({ pageUrl, faviconUrl }, "Fetching favicon");
   const image = await fetchImage(faviconUrl);
 
   if (!image && faviconUrl !== `${parsed.origin}/favicon.ico`) {
@@ -141,7 +137,6 @@ export async function fetchFavicon(pageUrl: string): Promise<{ body: ArrayBuffer
   }
 
   if (!image) {
-    log.debug({ pageUrl }, "No favicon found");
     return null;
   }
 
