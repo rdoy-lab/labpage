@@ -55,8 +55,11 @@ export async function POST() {
 
     setDiscoveredServices(discovered);
 
-    // Check favicons for services with URLs
+    // Check favicons for discovered services with URLs
     await checkFavicons(discovered);
+
+    // Also check favicons for manually configured services
+    await checkFavicons(config.services);
 
     // Return merged view: manual (persisted) + discovered (runtime)
     return NextResponse.json({ ...config, services: getMergedServices(config.services) });

@@ -59,10 +59,6 @@ async function findFaviconUrl(pageUrl: string): Promise<string> {
   try {
     const response = await fetchUrl(origin);
 
-    if (response.status < 200 || response.status >= 300) {
-      return `${origin}/favicon.ico`;
-    }
-
     const html = await response.text();
     const linkRegex = /<link[^>]+rel=["'](?:shortcut\s+)?icon["'][^>]*>/gi;
     const hrefRegex = /href=["']([^"']+)["']/i;
@@ -120,6 +116,16 @@ export async function checkFavicon(pageUrl: string): Promise<{ url: string; cont
   }
 
   if (!image) {
+    const commonPaths = ["/favicon.png", "/favicon.svg", "/apple-touch-icon.png"];
+    for (const path of commonPaths) {
+      const fallbackImage = await fetchImage(`${parsed.origin}${path}`);
+      if (fallbackImage) {
+        return { url: `${parsed.origin}${path}`, contentType: "image/x-icon" };
+      }
+    }
+  }
+
+  if (!image) {
     return null;
   }
 
@@ -137,6 +143,16 @@ export async function fetchFavicon(pageUrl: string): Promise<{ body: ArrayBuffer
     const fallback = await fetchImage(`${parsed.origin}/favicon.ico`);
     if (fallback) {
       return { body: fallback, contentType: "image/x-icon" };
+    }
+  }
+
+  if (!image) {
+    const commonPaths = ["/favicon.png", "/favicon.svg", "/apple-touch-icon.png"];
+    for (const path of commonPaths) {
+      const fallbackImage = await fetchImage(`${parsed.origin}${path}`);
+      if (fallbackImage) {
+        return { body: fallbackImage, contentType: "image/x-icon" };
+      }
     }
   }
 
