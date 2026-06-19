@@ -14,7 +14,7 @@ function getGitHash(): string {
 
 const nextConfig: NextConfig = {
   output: "standalone",
-  serverExternalPackages: ["dockerode", "ssh2", "@kubernetes/client-node"],
+  serverExternalPackages: ["dockerode", "ssh2", "@kubernetes/client-node", "pino"],
   allowedDevOrigins: ["172.16.10.72", "localhost", "127.0.0.1", "0.0.0.0"],
   env: {
     NEXT_PUBLIC_GIT_HASH: getGitHash(),

@@ -1,6 +1,9 @@
 import { NextResponse } from "next/server";
 import { loadConfig, updateConfig } from "@/lib/config";
 import { getMergedServices } from "@/lib/runtime";
+import logger from "@/lib/logger";
+
+const log = logger.child({ module: "api/groups/[name]" });
 
 export async function PUT(
   request: Request,
@@ -19,7 +22,8 @@ export async function PUT(
 
     const updated = await updateConfig({ groups: config.groups });
     return NextResponse.json({ ...updated, services: getMergedServices(updated.services) });
-  } catch {
+  } catch (err) {
+    log.error({ err }, "Failed to update group");
     return NextResponse.json(
       { error: "Failed to update group" },
       { status: 500 }

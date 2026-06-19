@@ -3,8 +3,12 @@ import { loadConfig } from "@/lib/config";
 import { checkAllServices } from "@/lib/health";
 import { getDiscoveredServices, setDiscoveredServices, getMergedServices } from "@/lib/runtime";
 import { Services } from "@/lib/types";
+import logger from "@/lib/logger";
+
+const log = logger.child({ module: "api/health" });
 
 export async function POST() {
+  log.info("Running health checks");
   try {
     const config = await loadConfig();
     const discovered = getDiscoveredServices();
@@ -42,7 +46,8 @@ export async function POST() {
     const manualWithStatus = { ...config.services, ...updatedManual };
 
     return NextResponse.json({ ...config, services: getMergedServices(manualWithStatus) });
-  } catch {
+  } catch (err) {
+    log.error({ err }, "Failed to check health");
     return NextResponse.json(
       { error: "Failed to check health" },
       { status: 500 }

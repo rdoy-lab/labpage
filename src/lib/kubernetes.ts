@@ -1,5 +1,8 @@
 import * as k8s from "@kubernetes/client-node";
 import { KubernetesConfig, Services } from "./types";
+import logger from "./logger";
+
+const log = logger.child({ module: "kubernetes" });
 
 function loadKubeConfig(config: KubernetesConfig): k8s.KubeConfig {
   const kc = new k8s.KubeConfig();
@@ -119,6 +122,7 @@ export async function discoverKubernetesServices(
     const contexts = config.contexts || [kc.getCurrentContext()];
 
     for (const context of contexts) {
+      log.info({ context }, "Discovering Kubernetes services");
       try {
         kc.setCurrentContext(context);
 
@@ -131,14 +135,11 @@ export async function discoverKubernetesServices(
         // Discover NodePort/LoadBalancer services cluster-wide
         await discoverServices(k8sApi, services);
       } catch (error) {
-        console.error(
-          `Failed to discover from K8s context "${context}":`,
-          error
-        );
+        log.error({ context, err: error }, "Failed to discover from K8s context");
       }
     }
   } catch (error) {
-    console.error("Failed to connect to Kubernetes:", error);
+    log.error({ err: error }, "Failed to connect to Kubernetes");
   }
 
   return services;
@@ -159,7 +160,7 @@ async function discoverIngresses(
       processIngress(ingress, services);
     }
   } catch (error) {
-    console.error("Failed to list Ingresses:", error);
+    log.error({ err: error }, "Failed to list Ingresses");
   }
 }
 
@@ -220,7 +221,7 @@ async function discoverServices(
       processService(svc, services);
     }
   } catch (error) {
-    console.error("Failed to list Services:", error);
+    log.error({ err: error }, "Failed to list Services");
   }
 }
 

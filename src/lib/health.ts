@@ -1,6 +1,9 @@
 import http from "http";
 import https from "https";
 import { Service, Services } from "./types";
+import logger from "./logger";
+
+const log = logger.child({ module: "health" });
 
 type StatusCallback = (id: string, status: Service["status"]) => void;
 
@@ -25,12 +28,18 @@ export async function checkServiceHealth(
         },
         (res) => {
           const code = res.statusCode ?? 0;
-          resolve((code >= 200 && code < 400) || code === 401 ? "online" : "offline");
+          const status = (code >= 200 && code < 400) || code === 401 ? "online" : "offline";
+          log.debug({ url: checkUrl, statusCode: code, status }, "Health check response");
+          resolve(status);
         }
       );
 
-      req.on("error", () => resolve("offline"));
+      req.on("error", (err) => {
+        log.debug({ url: checkUrl, err }, "Health check error");
+        resolve("offline");
+      });
       req.on("timeout", () => {
+        log.debug({ url: checkUrl }, "Health check timed out");
         req.destroy();
         resolve("offline");
       });
@@ -47,6 +56,7 @@ export async function checkAllServices(
 
   const checks = Object.entries(services).map(async ([id, service]) => {
     const status = await checkServiceHealth(service);
+    log.info({ serviceId: id, status }, "Health check completed");
     results.set(id, status);
   });
 
@@ -59,6 +69,7 @@ export function startHealthChecks(
   intervalMs: number,
   callback: StatusCallback
 ): void {
+  log.info({ count: Object.keys(services).length, intervalMs }, "Starting periodic health checks");
   // Clear existing checks
   stopHealthChecks();
 
@@ -80,6 +91,7 @@ export function startHealthChecks(
 }
 
 export function stopHealthChecks(): void {
+  log.info("Stopping health checks");
   for (const interval of checks.values()) {
     clearInterval(interval);
   }

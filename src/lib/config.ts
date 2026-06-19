@@ -2,6 +2,9 @@ import fs from "fs/promises";
 import path from "path";
 import yaml from "js-yaml";
 import { Config, DEFAULT_CONFIG } from "./types";
+import logger from "./logger";
+
+const log = logger.child({ module: "config" });
 
 function getArgValue(flag: string): string | undefined {
   const idx = process.argv.indexOf(flag);
@@ -22,12 +25,14 @@ export async function ensureConfigDir(): Promise<void> {
 }
 
 export async function loadConfig(): Promise<Config> {
+  log.info({ path: CONFIG_PATH }, "Loading config");
   try {
     const content = await fs.readFile(CONFIG_PATH, "utf-8");
     const parsed = yaml.load(content) as Partial<Config>;
     return mergeConfig(DEFAULT_CONFIG, parsed);
   } catch (error: unknown) {
     if ((error as NodeJS.ErrnoException).code === "ENOENT") {
+      log.info({ path: CONFIG_PATH }, "Config not found, creating with defaults");
       await saveConfig(DEFAULT_CONFIG);
       return DEFAULT_CONFIG;
     }
@@ -36,6 +41,7 @@ export async function loadConfig(): Promise<Config> {
 }
 
 export async function saveConfig(config: Config): Promise<void> {
+  log.info({ path: CONFIG_PATH }, "Saving config");
   await ensureConfigDir();
   const content = yaml.dump(config, {
     lineWidth: -1,
@@ -46,6 +52,7 @@ export async function saveConfig(config: Config): Promise<void> {
 }
 
 export async function updateConfig(updates: Partial<Config>): Promise<Config> {
+  log.info("Updating config");
   const current = await loadConfig();
   const merged = mergeConfig(current, updates);
   await saveConfig(merged);

@@ -1,6 +1,9 @@
 import Docker from "dockerode";
 import os from "os";
 import { DockerConfig, DockerHost, Service, Services } from "./types";
+import logger from "./logger";
+
+const log = logger.child({ module: "docker" });
 
 interface ContainerInfo {
   Id: string;
@@ -89,9 +92,11 @@ export async function discoverServices(
   const services: Services = {};
 
   for (const host of config.hosts) {
+    log.info({ host: host.socket || host.host }, "Discovering Docker services");
     try {
       const docker = createDockerClient(host);
       const containers = (await docker.listContainers()) as ContainerInfo[];
+      log.info({ host: host.socket || host.host, count: containers.length }, "Listed containers");
 
       // Try to get Traefik routers if enabled
       let traefikInfo: TraefikInfo = { routers: [], entrypoints: [] };
@@ -110,7 +115,7 @@ export async function discoverServices(
         }
       }
     } catch (error) {
-      console.error(`Failed to connect to Docker host:`, host, error);
+      log.error({ host, err: error }, "Failed to connect to Docker host");
     }
   }
 
